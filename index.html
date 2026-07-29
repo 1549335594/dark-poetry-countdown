@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>倒计时 · 暗黑诗意</title>
+<style>
+  :root {
+    --bg: #030304;
+    --accent: #f5c842;
+    --accent-soft: rgba(245, 200, 66, 0.35);
+    --card-radius: 14px;
+    --card-w: clamp(46px, 13.5vw, 104px);
+    --card-h: calc(var(--card-w) * 1.5);
+    --gap: clamp(4px, 1vw, 10px);
+    --colon-w: clamp(8px, 2vw, 16px);
+    --flip-ms: 350ms;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    position: fixed;
+    inset: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    color: #e8e2d4;
+    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -10%, rgba(64, 48, 96, 0.28), transparent 62%),
+      radial-gradient(ellipse 70% 50% at 85% 115%, rgba(22, 34, 66, 0.35), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 10% 100%, rgba(52, 40, 18, 0.18), transparent 65%),
+      var(--bg);
+  }
+
+  /* ================= 动态背景层 ================= */
+  .bg-fx {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .aurora {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    will-change: transform;
+  }
+
+  .aurora-1 {
+    width: 55vmax; height: 55vmax;
+    left: -18vmax; top: -20vmax;
+    background: radial-gradient(circle, rgba(88, 60, 140, 0.20), transparent 65%);
+    animation: drift-a 26s ease-in-out infinite alternate;
+  }
+
+  .aurora-2 {
+    width: 48vmax; height: 48vmax;
+    right: -16vmax; bottom: -18vmax;
+    background: radial-gradient(circle, rgba(30, 56, 110, 0.22), transparent 65%);
+    animation: drift-b 32s ease-in-out infinite alternate;
+  }
+
+  .aurora-3 {
+    width: 34vmax; height: 34vmax;
+    left: 30vw; top: 55vh;
+    background: radial-gradient(circle, rgba(150, 112, 32, 0.10), transparent 62%);
+    animation: drift-c 22s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift-a {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    100% { transform: translate3d(9vmax, 7vmax, 0) scale(1.15); }
+  }
+  @keyframes drift-b {
+    0%   { transform: translate3d(0, 0, 0) scale(1.1); }
+    100% { transform: translate3d(-8vmax, -6vmax, 0) scale(0.95); }
+  }
+  @keyframes drift-c {
+    0%   { transform: translate3d(0, 0, 0); }
+    50%  { transform: translate3d(-6vmax, -8vmax, 0); }
+    100% { transform: translate3d(5vmax, -3vmax, 0); }
+  }
+
+  /* 噪点纹理，增加胶片质感 */
+  .bg-noise {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  #particles {
+    position: fixed;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ================= 主容器 ================= */
+  .app {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 720px;
+    padding: 16px;
+  }
+
+  /* ================= 设置页 ================= */
+  .setup-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(32px, 7vh, 56px);
+    width: 100%;
+  }
+  .setup-page.hidden { display: none; }
+
+  .setup-title {
+    font-size: clamp(11px, 2.2vw, 13px);
+    color: rgba(232, 226, 212, 0.28);
+    letter-spacing: 0.6em;
+    text-indent: 0.6em;
+    font-weight: 300;
+  }
+
+  .picker-row {
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 2.5vw, 22px);
+  }
+
+  .picker-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .picker-label {
+    font-size: clamp(10px, 2vw, 11px);
+    color: rgba(232, 226, 212, 0.3);
+    letter-spacing: 0.4em;
+    text-indent: 0.4em;
+  }
+
+  .picker-btn {
+    width: clamp(46px, 13vw, 64px);
+    height: clamp(32px, 9vw, 42px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015));
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    color: rgba(232, 226, 212, 0.45);
+    font-size: clamp(13px, 3.5vw, 17px);
+    cursor: pointer;
+    border-radius: 10px;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+
+  .picker-btn:active {
+    background: rgba(245, 200, 66, 0.1);
+    color: var(--accent);
+    border-color: var(--accent-soft);
+  }
+
+  .picker-value {
+    width: clamp(58px, 16.5vw, 88px);
+    height: clamp(72px, 20vw, 108px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(32px, 9vw, 52px);
+    font-weight: 200;
+    font-variant-numeric: tabular-nums;
+    color: #f2ecdc;
+    text-shadow: 0 0 24px rgba(245, 200, 66, 0.12);
+    background: linear-gradient(165deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02) 45%, rgba(0,0,0,0.25));
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 32px rgba(0,0,0,0.45);
+  }
+
+  .picker-colon {
+    font-size: clamp(20px, 5.5vw, 32px);
+    color: rgba(232, 226, 212, 0.25);
+    padding-bottom: clamp(26px, 7vw, 44px);
+    font-weight: 100;
+  }
+
+  .start-btn {
+    padding: 15px 52px;
+    background: linear-gradient(160deg, rgba(245,200,66,0.08), rgba(245,200,66,0.02));
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--accent-soft);
+    color: var(--accent);
+    font-size: clamp(13px, 2.8vw, 15px);
+    letter-spacing: 0.4em;
+    text-indent: 0.4em;
+    cursor: pointer;
+    border-radius: 60px;
+    transition: box-shadow 0.4s, border-color 0.4s, transform 0.15s;
+    font-family: inherit;
+  }
+
+  .start-btn:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 36px rgba(245, 200, 66, 0.18), inset 0 0 18px rgba(245,200,66,0.05);
+  }
+
+  .start-btn:active { transform: scale(0.96); }
+
+  .start-btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .setup-poem {
+    font-size: clamp(11px, 2.2vw, 12px);
+    color: rgba(232, 226, 212, 0.14);
+    letter-spacing: 0.25em;
+    text-align: center;
+    line-height: 2;
+    font-weight: 300;
+  }
+
+  /* ================= 倒计时页 ================= */
+  .countdown-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(36px, 8vh, 64px);
+    width: 100%;
+  }
+  .countdown-page.hidden { display: none; }
+
+  .countdown-tag {
+    font-size: clamp(10px, 2vw, 11px);
+    color: rgba(232, 226, 212, 0.22);
+    letter-spacing: 0.7em;
+    text-indent: 0.7em;
+    font-weight: 300;
+  }
+
+  /* ---------- 翻转时钟 ---------- */
+  .flip-clock {
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+    filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.55));
+  }
+
+  .flip-unit {
+    position: relative;
+    width: var(--card-w);
+    height: var(--card-h);
+  }
+
+  .flip-card {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    perspective: 700px;
+  }
+
+  /* 翻页轴点装饰（左右两侧） */
+  .flip-card::before,
+  .flip-card::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 3px;
+    height: 9px;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 2px;
+    z-index: 11;
+    pointer-events: none;
+  }
+  .flip-card::before { left: -1px; }
+  .flip-card::after { right: -1px; }
+
+  .card-half {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    overflow: hidden;
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .card-top {
+    top: 0;
+    z-index: 2;
+    border-radius: var(--card-radius) var(--card-radius) 0 0;
+    border-bottom: none;
+    background: linear-gradient(170deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03) 55%, rgba(0,0,0,0.12));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+  }
+
+  .card-bottom {
+    bottom: 0;
+    z-index: 2;
+    border-radius: 0 0 var(--card-radius) var(--card-radius);
+    border-top: none;
+    background: linear-gradient(175deg, rgba(0,0,0,0.18), rgba(0,0,0,0.38));
+    box-shadow: inset 0 -1px 0 rgba(255,255,255,0.03);
+  }
+
+  .card-bottom-flip {
+    bottom: 0;
+    z-index: 4;
+    border-radius: 0 0 var(--card-radius) var(--card-radius);
+    border-top: none;
+    background: linear-gradient(175deg, rgba(0,0,0,0.22), rgba(0,0,0,0.42));
+    transform-origin: top center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: rotateX(0.001deg);
+    visibility: hidden;
+    will-change: transform;
+  }
+
+  .card-top-flip {
+    top: 0;
+    z-index: 5;
+    border-radius: var(--card-radius) var(--card-radius) 0 0;
+    border-bottom: none;
+    background: linear-gradient(170deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035) 55%, rgba(0,0,0,0.12));
+    transform-origin: bottom center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: rotateX(90deg);
+    visibility: hidden;
+    will-change: transform;
+  }
+
+  /* 数字 —— 绝对定位修复裁剪问题（margin百分比相对宽度的bug） */
+  .num {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 200%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(var(--card-w) * 0.98);
+    font-weight: 200;
+    font-variant-numeric: tabular-nums;
+    color: #f4eedd;
+    text-shadow:
+      0 0 18px rgba(245, 200, 66, 0.14),
+      0 0 42px rgba(245, 200, 66, 0.05);
+    line-height: 1;
+  }
+
+  .card-bottom .num,
+  .card-bottom-flip .num {
+    top: -100%;
+  }
+
+  /* 中线折痕 */
+  .card-crease {
+    position: absolute;
+    top: 50%;
+    left: 3px; right: 3px;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* 翻转动画 */
+  .flip-card.flipping .card-bottom-flip {
+    visibility: visible;
+    animation: flipBottom var(--flip-ms) cubic-bezier(0.37, 0.01, 0.35, 1) forwards;
+  }
+
+  .flip-card.flipping .card-top-flip {
+    visibility: visible;
+    animation: flipTop var(--flip-ms) cubic-bezier(0.37, 0.01, 0.35, 1) forwards;
+  }
+
+  @keyframes flipBottom {
+    0%   { transform: rotateX(0.001deg); }
+    100% { transform: rotateX(-90deg); }
+  }
+
+  @keyframes flipTop {
+    0%   { transform: rotateX(90deg); }
+    100% { transform: rotateX(0.001deg); }
+  }
+
+  /* ---------- 冒号（CSS动画闪烁，替代setInterval） ---------- */
+  .flip-colon {
+    width: var(--colon-w);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(8px, 2vw, 14px);
+  }
+
+  .colon-dot {
+    width: clamp(4px, 1.1vw, 7px);
+    height: clamp(4px, 1.1vw, 7px);
+    border-radius: 50%;
+    background: rgba(244, 238, 221, 0.55);
+    box-shadow: 0 0 10px rgba(245, 200, 66, 0.25);
+  }
+
+  .flip-clock.running .colon-dot {
+    animation: colonBlink 2s steps(1, end) infinite;
+  }
+
+  @keyframes colonBlink {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.12; }
+    100% { opacity: 1; }
+  }
+
+  /* ---------- 进度条（transform合成器驱动，零重排） ---------- */
+  .progress-wrap {
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+    position: relative;
+  }
+
+  .progress-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #b8860b, var(--accent) 60%, #ffe9a8);
+    transform-origin: left center;
+    transform: scaleX(1);
+    will-change: transform;
+    box-shadow: 0 0 18px rgba(245, 200, 66, 0.55), 0 0 6px rgba(245, 200, 66, 0.35);
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #fff7dd;
+    transform: translateY(-50%);
+    box-shadow: 0 0 10px var(--accent), 0 0 22px var(--accent);
+  }
+
+  .progress-time {
+    display: flex;
+    justify-content: space-between;
+    font-size: clamp(10px, 2vw, 11px);
+    color: rgba(232, 226, 212, 0.22);
+    letter-spacing: 0.25em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- 返回按钮 ---------- */
+  .reset-btn {
+    position: fixed;
+    top: max(14px, env(safe-area-inset-top));
+    left: max(14px, env(safe-area-inset-left));
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    color: rgba(232, 226, 212, 0.3);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    transition: color 0.3s, border-color 0.3s;
+  }
+
+  .reset-btn:hover, .reset-btn:active {
+    color: rgba(232, 226, 212, 0.7);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* ---------- 结束状态 ---------- */
+  .finished-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+  .finished-state.show { display: flex; }
+
+  .finished-text {
+    font-size: clamp(15px, 3.8vw, 19px);
+    color: var(--accent);
+    letter-spacing: 0.35em;
+    text-indent: 0.35em;
+    font-weight: 300;
+    text-shadow: 0 0 24px rgba(245, 200, 66, 0.35);
+    animation: pulse-text 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse-text {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
+  }
+
+  .finished-sub {
+    font-size: clamp(10px, 2vw, 12px);
+    color: rgba(232, 226, 212, 0.2);
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+  }
+
+  .flip-clock.finished .flip-card {
+    animation: card-glow 1.8s ease-in-out infinite;
+  }
+
+  @keyframes card-glow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.35); }
+  }
+
+  .restart-btn {
+    padding: 13px 40px;
+    background: linear-gradient(160deg, rgba(245,200,66,0.08), rgba(245,200,66,0.02));
+    border: 1px solid var(--accent-soft);
+    color: var(--accent);
+    font-size: clamp(12px, 2.5vw, 14px);
+    letter-spacing: 0.35em;
+    text-indent: 0.35em;
+    cursor: pointer;
+    border-radius: 50px;
+    font-family: inherit;
+    transition: box-shadow 0.4s, border-color 0.4s, transform 0.15s;
+  }
+
+  .restart-btn:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 28px rgba(245, 200, 66, 0.18);
+  }
+  .restart-btn:active { transform: scale(0.96); }
+
+  /* ---------- 响应式 ---------- */
+  @media (min-width: 768px) {
+    :root {
+      --card-w: 100px;
+      --gap: 10px;
+      --colon-w: 16px;
+    }
+  }
+
+  @media (max-width: 380px) {
+    :root {
+      --card-w: 44px;
+      --gap: 4px;
+      --colon-w: 8px;
+      --card-radius: 10px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aurora, .flip-clock.running .colon-dot { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 动态背景 -->
+<div class="bg-fx">
+  <div class="aurora aurora-1"></div>
+  <div class="aurora aurora-2"></div>
+  <div class="aurora aurora-3"></div>
+</div>
+<div class="bg-noise"></div>
+<canvas id="particles"></canvas>
+
+<div class="app">
+  <!-- ===== 设置页 ===== -->
+  <div class="setup-page" id="setupPage">
+    <div class="setup-title">设 定 期 限</div>
+
+    <div class="picker-row">
+      <div class="picker-col">
+        <button class="picker-btn up" data-target="hours" aria-label="增加小时">&#9650;</button>
+        <div class="picker-value" id="hoursVal">00</div>
+        <button class="picker-btn down" data-target="hours" aria-label="减少小时">&#9660;</button>
+        <span class="picker-label">时</span>
+      </div>
+      <div class="picker-colon">:</div>
+      <div class="picker-col">
+        <button class="picker-btn up" data-target="minutes" aria-label="增加分钟">&#9650;</button>
+        <div class="picker-value" id="minutesVal">05</div>
+        <button class="picker-btn down" data-target="minutes" aria-label="减少分钟">&#9660;</button>
+        <span class="picker-label">分</span>
+      </div>
+      <div class="picker-colon">:</div>
+      <div class="picker-col">
+        <button class="picker-btn up" data-target="seconds" aria-label="增加秒数">&#9650;</button>
+        <div class="picker-value" id="secondsVal">00</div>
+        <button class="picker-btn down" data-target="seconds" aria-label="减少秒数">&#9660;</button>
+        <span class="picker-label">秒</span>
+      </div>
+    </div>
+
+    <button class="start-btn" id="startBtn">开 始 倒 计 时</button>
+
+    <div class="setup-poem">
+      设定一个期限<br>让等待有了形状
+    </div>
+  </div>
+
+  <!-- ===== 倒计时页 ===== -->
+  <div class="countdown-page hidden" id="countdownPage">
+    <div class="countdown-tag">剩 余 时 间</div>
+
+    <div class="flip-clock" id="flipClock"></div>
+
+    <div class="finished-state" id="finishedState">
+      <div class="finished-text">时 间 到 了</div>
+      <div class="finished-sub">每一秒都曾真实存在</div>
+      <button class="restart-btn" id="restartBtn">重 新 设 定</button>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-time">
+        <span>REMAINING</span>
+        <span id="remainingTime">05:00</span>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="resetBtn" title="重新设定">&#8592;</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  var FLIP_MS = 350; // 与CSS --flip-ms 保持一致
+
+  // ========== DOM ==========
+  var setupPage = document.getElementById('setupPage');
+  var countdownPage = document.getElementById('countdownPage');
+  var flipClock = document.getElementById('flipClock');
+  var progressFill = document.getElementById('progressFill');
+  var remainingTimeEl = document.getElementById('remainingTime');
+  var finishedState = document.getElementById('finishedState');
+  var progressWrap = document.getElementById('progressWrap');
+  var hoursVal = document.getElementById('hoursVal');
+  var minutesVal = document.getElementById('minutesVal');
+  var secondsVal = document.getElementById('secondsVal');
+  var startBtn = document.getElementById('startBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  // ========== 状态 ==========
+  var totalSeconds = 0;
+  var startTimestamp = 0;
+  var secondTimerId = null;
+  var rafId = null;
+  var isFinished = false;
+  var currentDigits = [0, 0, 0, 5, 0, 0];
+  var cardEls = [];
+
+  // ========== 粒子背景 ==========
+  var canvas = document.getElementById('particles');
+  var ctx = canvas.getContext('2d');
+  var particles = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    var count = Math.min(Math.floor((canvas.width * canvas.height) / 26000), 32);
+    particles = [];
+    for (var i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.1 + 0.3,
+        vx: (Math.random() - 0.5) * 0.12,
+        vy: (Math.random() - 0.5) * 0.12,
+        alpha: Math.random() * 0.22 + 0.05,
+        tw: Math.random() * Math.PI * 2,
+        twSpeed: (Math.random() - 0.5) * 0.004
+      });
+    }
+  }
+
+  function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.tw += p.twSpeed;
+      var a = p.alpha + Math.sin(p.tw) * 0.07;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(245,200,66,' + Math.max(0, Math.min(1, a)) + ')';
+      ctx.fill();
+    }
+    requestAnimationFrame(drawParticles);
+  }
+
+  resizeCanvas();
+  createParticles();
+  drawParticles();
+  window.addEventListener('resize', function() {
+    resizeCanvas();
+    createParticles();
+  });
+
+  // ========== 构建翻转时钟DOM ==========
+  function buildFlipClock() {
+    flipClock.innerHTML = '';
+    cardEls = [];
+    for (var i = 0; i < 6; i++) {
+      var unit = document.createElement('div');
+      unit.className = 'flip-unit';
+      unit.innerHTML =
+        '<div class="flip-card" data-index="' + i + '">' +
+          '<div class="card-crease"></div>' +
+          '<div class="card-half card-top"><div class="num">0</div></div>' +
+          '<div class="card-half card-bottom"><div class="num">0</div></div>' +
+          '<div class="card-half card-top-flip"><div class="num">0</div></div>' +
+          '<div class="card-half card-bottom-flip"><div class="num">0</div></div>' +
+        '</div>';
+      flipClock.appendChild(unit);
+      cardEls.push(unit.firstChild);
+
+      if (i === 1 || i === 3) {
+        var colon = document.createElement('div');
+        colon.className = 'flip-colon';
+        colon.innerHTML = '<div class="colon-dot"></div><div class="colon-dot"></div>';
+        flipClock.appendChild(colon);
+      }
+    }
+  }
+
+  buildFlipClock();
+
+  // ========== 翻转（setTimeout同步，避免animationend冒泡双触发） ==========
+  function setStaticDigit(card, digit) {
+    card.querySelector('.card-top .num').textContent = digit;
+    card.querySelector('.card-bottom .num').textContent = digit;
+  }
+
+  function flipDigit(index, newDigit) {
+    var card = cardEls[index];
+    if (!card) return;
+
+    var oldDigit = currentDigits[index];
+    if (oldDigit === newDigit) return;
+
+    // 逻辑值立即更新
+    currentDigits[index] = newDigit;
+
+    // 若上一次翻转尚未收尾，立即收尾
+    if (card._flipTimer) {
+      clearTimeout(card._flipTimer);
+      card._flipTimer = null;
+      card.classList.remove('flipping');
+    }
+
+    card.querySelector('.card-bottom-flip .num').textContent = oldDigit;
+    card.querySelector('.card-top-flip .num').textContent = newDigit;
+
+    // 强制reflow，保证动画重新触发
+    void card.offsetWidth;
+    card.classList.add('flipping');
+
+    card._flipTimer = setTimeout(function() {
+      card._flipTimer = null;
+      setStaticDigit(card, newDigit);
+      card.classList.remove('flipping');
+    }, FLIP_MS);
+  }
+
+  function getDigitsFromSeconds(total) {
+    var h = Math.floor(total / 3600);
+    var m = Math.floor((total % 3600) / 60);
+    var s = total % 60;
+    var str = String(h).padStart(2, '0') + String(m).padStart(2, '0') + String(s).padStart(2, '0');
+    return str.split('').map(Number);
+  }
+
+  function updateAllDigits(digits) {
+    for (var i = 0; i < 6; i++) {
+      if (digits[i] !== currentDigits[i]) {
+        flipDigit(i, digits[i]);
+      }
+    }
+  }
+
+  function formatTime(total) {
+    var h = Math.floor(total / 3600);
+    var m = Math.floor((total % 3600) / 60);
+    var s = total % 60;
+    var mm = String(m).padStart(2, '0');
+    var ss = String(s).padStart(2, '0');
+    return h > 0 ? String(h).padStart(2, '0') + ':' + mm + ':' + ss : mm + ':' + ss;
+  }
+
+  // ========== 进度条（scaleX，合成器驱动） ==========
+  function startProgressUpdate() {
+    var update = function() {
+      if (isFinished) return;
+
+      var elapsed = (Date.now() - startTimestamp) / 1000;
+      var remaining = Math.max(0, totalSeconds - elapsed);
+      progressFill.style.transform = 'scaleX(' + (remaining / totalSeconds) + ')';
+      remainingTimeEl.textContent = formatTime(Math.ceil(remaining));
+
+      if (remaining > 0) {
+        rafId = requestAnimationFrame(update);
+      }
+    };
+    rafId = requestAnimationFrame(update);
+  }
+
+  function stopProgressUpdate() {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+  }
+
+  // ========== 倒计时控制 ==========
+  function startCountdown() {
+    isFinished = false;
+    finishedState.classList.remove('show');
+    progressWrap.style.display = 'flex';
+    resetBtn.style.display = 'flex';
+    flipClock.classList.remove('finished');
+    flipClock.classList.add('running');
+
+    startTimestamp = Date.now();
+
+    var initDigits = getDigitsFromSeconds(totalSeconds);
+    for (var i = 0; i < 6; i++) {
+      currentDigits[i] = initDigits[i];
+      var card = cardEls[i];
+      if (card._flipTimer) {
+        clearTimeout(card._flipTimer);
+        card._flipTimer = null;
+      }
+      card.classList.remove('flipping');
+      setStaticDigit(card, initDigits[i]);
+    }
+
+    remainingTimeEl.textContent = formatTime(totalSeconds);
+    progressFill.style.transform = 'scaleX(1)';
+
+    startProgressUpdate();
+
+    secondTimerId = setInterval(function() {
+      var elapsed = (Date.now() - startTimestamp) / 1000;
+      var remaining = Math.max(0, totalSeconds - elapsed);
+      var secRemaining = Math.ceil(remaining);
+
+      if (secRemaining <= 0) {
+        clearInterval(secondTimerId);
+        secondTimerId = null;
+        finishCountdown();
+        return;
+      }
+
+      updateAllDigits(getDigitsFromSeconds(secRemaining));
+    }, 1000);
+  }
+
+  function finishCountdown() {
+    isFinished = true;
+    stopProgressUpdate();
+    if (secondTimerId) {
+      clearInterval(secondTimerId);
+      secondTimerId = null;
+    }
+
+    updateAllDigits([0, 0, 0, 0, 0, 0]);
+    progressFill.style.transform = 'scaleX(0)';
+    remainingTimeEl.textContent = '00:00';
+    flipClock.classList.remove('running');
+
+    setTimeout(function() {
+      progressWrap.style.display = 'none';
+      resetBtn.style.display = 'none';
+      finishedState.classList.add('show');
+      flipClock.classList.add('finished');
+    }, 1200);
+  }
+
+  function stopAll() {
+    isFinished = true;
+    stopProgressUpdate();
+    if (secondTimerId) {
+      clearInterval(secondTimerId);
+      secondTimerId = null;
+    }
+  }
+
+  // ========== 页面切换 ==========
+  function showSetup() {
+    stopAll();
+    setupPage.classList.remove('hidden');
+    countdownPage.classList.add('hidden');
+    finishedState.classList.remove('show');
+    flipClock.classList.remove('finished');
+    flipClock.classList.remove('running');
+    progressWrap.style.display = 'flex';
+    resetBtn.style.display = 'flex';
+    updateSetupDisplay();
+  }
+
+  function showCountdown() {
+    setupPage.classList.add('hidden');
+    countdownPage.classList.remove('hidden');
+    startCountdown();
+  }
+
+  // ========== 设置页逻辑 ==========
+  var pickerHours = 0;
+  var pickerMinutes = 5;
+  var pickerSeconds = 0;
+
+  function updateSetupDisplay() {
+    hoursVal.textContent = String(pickerHours).padStart(2, '0');
+    minutesVal.textContent = String(pickerMinutes).padStart(2, '0');
+    secondsVal.textContent = String(pickerSeconds).padStart(2, '0');
+    startBtn.disabled = !(pickerHours > 0 || pickerMinutes > 0 || pickerSeconds > 0);
+  }
+
+  function stepValue(target, isUp) {
+    if (target === 'hours') {
+      pickerHours = isUp ? (pickerHours + 1) % 100 : (pickerHours + 99) % 100;
+    } else if (target === 'minutes') {
+      pickerMinutes = isUp ? (pickerMinutes + 1) % 60 : (pickerMinutes + 59) % 60;
+    } else if (target === 'seconds') {
+      pickerSeconds = isUp ? (pickerSeconds + 1) % 60 : (pickerSeconds + 59) % 60;
+    }
+    updateSetupDisplay();
+  }
+
+  // 点击 + 长按加速
+  var holdTimer = null;
+
+  Array.prototype.forEach.call(document.querySelectorAll('.picker-btn'), function(btn) {
+    var target = btn.dataset.target;
+    var isUp = btn.classList.contains('up');
+
+    btn.addEventListener('click', function() {
+      stepValue(target, isUp);
+    });
+
+    btn.addEventListener('pointerdown', function(e) {
+      e.preventDefault();
+      var delay = 420;
+      var tick = function() {
+        stepValue(target, isUp);
+        delay = Math.max(55, delay * 0.82);
+        holdTimer = setTimeout(tick, delay);
+      };
+      holdTimer = setTimeout(tick, 480);
+    });
+
+    var stopHold = function() {
+      if (holdTimer) {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+      }
+    };
+    btn.addEventListener('pointerup', stopHold);
+    btn.addEventListener('pointerleave', stopHold);
+    btn.addEventListener('pointercancel', stopHold);
+  });
+
+  startBtn.addEventListener('click', function() {
+    totalSeconds = pickerHours * 3600 + pickerMinutes * 60 + pickerSeconds;
+    if (totalSeconds <= 0) return;
+    showCountdown();
+  });
+
+  resetBtn.addEventListener('click', function() {
+    if (!isFinished) showSetup();
+  });
+
+  restartBtn.addEventListener('click', function() {
+    showSetup();
+  });
+
+  // 初始化
+  updateSetupDisplay();
+  showSetup();
+})();
+</script>
+</body>
+</html>
