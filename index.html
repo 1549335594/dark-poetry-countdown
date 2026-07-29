@@ -493,13 +493,42 @@
     box-shadow: 0 0 10px var(--accent), 0 0 22px var(--accent);
   }
 
+  /* 进度条行：进度条 + 百分比 */
+  .progress-bar-row {
+    position: relative;
+    width: 100%;
+  }
+
+  .progress-percent {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    font-size: clamp(11px, 2.5vw, 13px);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+    text-shadow: 0 0 10px rgba(245, 200, 66, 0.4);
+    font-weight: 400;
+  }
+
   .progress-time {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: clamp(10px, 2vw, 11px);
     color: rgba(232, 226, 212, 0.22);
-    letter-spacing: 0.25em;
+    letter-spacing: 0.05em;
     font-variant-numeric: tabular-nums;
+  }
+
+  .quote-text {
+    transition: opacity 0.6s;
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* ---------- 返回按钮 ---------- */
@@ -670,11 +699,14 @@
     </div>
 
     <div class="progress-wrap" id="progressWrap">
-      <div class="progress-track">
-        <div class="progress-fill" id="progressFill"></div>
+      <div class="progress-bar-row">
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+          <span class="progress-percent" id="progressPercent">100.0%</span>
+        </div>
       </div>
       <div class="progress-time">
-        <span>REMAINING</span>
+        <span class="quote-text" id="quoteText">完成比完美更重要</span>
         <span id="remainingTime">05:00</span>
       </div>
     </div>
@@ -694,7 +726,10 @@
   var countdownPage = document.getElementById('countdownPage');
   var flipClock = document.getElementById('flipClock');
   var progressFill = document.getElementById('progressFill');
+  var progressPercent = document.getElementById('progressPercent');
+  var progressTrack = document.querySelector('.progress-track');
   var remainingTimeEl = document.getElementById('remainingTime');
+  var quoteText = document.getElementById('quoteText');
   var finishedState = document.getElementById('finishedState');
   var progressWrap = document.getElementById('progressWrap');
   var hoursVal = document.getElementById('hoursVal');
@@ -712,6 +747,45 @@
   var isFinished = false;
   var currentDigits = [0, 0, 0, 5, 0, 0];
   var cardEls = [];
+
+  // ========== 金句列表 ==========
+  var QUOTES = [
+    '完成比完美更重要',
+    '种一棵树最好的时间是十年前，其次是现在',
+    '千里之行，始于足下',
+    '不要等到准备好了再开始',
+    '今日事，今日毕',
+    '慢慢来，比较快',
+    '时间就像海绵里的水，挤一挤总会有的',
+    '每一步都算数',
+    '日拱一卒，功不唐捐',
+    '人生没有白走的路'
+  ];
+  var quoteIndex = 0;
+  var quoteTimer = null;
+
+  function startQuoteCycle() {
+    quoteIndex = 0;
+    quoteText.textContent = QUOTES[quoteIndex];
+    quoteText.style.opacity = '1';
+
+    quoteTimer = setInterval(function() {
+      quoteText.style.opacity = '0';
+      setTimeout(function() {
+        quoteIndex = (quoteIndex + 1) % QUOTES.length;
+        quoteText.textContent = QUOTES[quoteIndex];
+        quoteText.style.opacity = '1';
+      }, 600);
+    }, 5000);
+  }
+
+  function stopQuoteCycle() {
+    if (quoteTimer) {
+      clearInterval(quoteTimer);
+      quoteTimer = null;
+    }
+    quoteText.style.opacity = '0';
+  }
 
   // ========== 粒子背景 ==========
   var canvas = document.getElementById('particles');
@@ -864,8 +938,15 @@
 
       var elapsed = (Date.now() - startTimestamp) / 1000;
       var remaining = Math.max(0, totalSeconds - elapsed);
-      progressFill.style.transform = 'scaleX(' + (remaining / totalSeconds) + ')';
+      var pct = (remaining / totalSeconds) * 100;
+      progressFill.style.transform = 'scaleX(' + (pct / 100) + ')';
       remainingTimeEl.textContent = formatTime(Math.ceil(remaining));
+
+      // 百分比位置跟随进度条
+      var trackW = progressTrack.clientWidth;
+      var dotRight = trackW * (pct / 100);
+      progressPercent.style.left = (dotRight + 14) + 'px';
+      progressPercent.textContent = pct <= 0 ? '0.0%' : pct.toFixed(1) + '%';
 
       if (remaining > 0) {
         rafId = requestAnimationFrame(update);
@@ -906,8 +987,11 @@
 
     remainingTimeEl.textContent = formatTime(totalSeconds);
     progressFill.style.transform = 'scaleX(1)';
+    progressPercent.style.left = (progressTrack.clientWidth + 14) + 'px';
+    progressPercent.textContent = '100.0%';
 
     startProgressUpdate();
+    startQuoteCycle();
 
     secondTimerId = setInterval(function() {
       var elapsed = (Date.now() - startTimestamp) / 1000;
@@ -928,6 +1012,7 @@
   function finishCountdown() {
     isFinished = true;
     stopProgressUpdate();
+    stopQuoteCycle();
     if (secondTimerId) {
       clearInterval(secondTimerId);
       secondTimerId = null;
@@ -935,6 +1020,8 @@
 
     updateAllDigits([0, 0, 0, 0, 0, 0]);
     progressFill.style.transform = 'scaleX(0)';
+    progressPercent.style.left = '14px';
+    progressPercent.textContent = '0.0%';
     remainingTimeEl.textContent = '00:00';
     flipClock.classList.remove('running');
 
@@ -949,6 +1036,7 @@
   function stopAll() {
     isFinished = true;
     stopProgressUpdate();
+    stopQuoteCycle();
     if (secondTimerId) {
       clearInterval(secondTimerId);
       secondTimerId = null;
