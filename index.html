@@ -773,16 +773,22 @@
     '人生没有白走的路'
   ];
   var quoteIndex = 0;
-  var quoteTimer = null;
+  var quoteTimers = [];
 
   // 电影质感：停留8秒，淡出2秒，淡入2秒
   var QUOTE_STAY = 8000;
   var QUOTE_FADE = 2000;
-  var QUOTE_CYCLE = QUOTE_STAY + QUOTE_FADE * 2;
+
+  function clearQuoteTimers() {
+    for (var i = 0; i < quoteTimers.length; i++) {
+      clearTimeout(quoteTimers[i]);
+    }
+    quoteTimers = [];
+  }
 
   function showQuote(text) {
     quoteText.textContent = text;
-    // 强制 reflow 确保 transition 触发
+    // 强制 reflow 确保 transition 重新触发
     void quoteText.offsetWidth;
     quoteText.classList.remove('quote-leaving');
     quoteText.classList.add('quote-visible');
@@ -794,42 +800,34 @@
   }
 
   function startQuoteCycle() {
+    clearQuoteTimers();
+    // 清除可能残留的 inline style，让 CSS class 生效
+    quoteText.style.opacity = '';
+    quoteText.style.transform = '';
+    quoteText.classList.remove('quote-visible', 'quote-leaving');
+
     quoteIndex = 0;
-    // 初始渐现
     showQuote(QUOTES[0]);
 
-    function cycle() {
-      quoteTimer = setTimeout(function() {
-        // 淡出
+    function scheduleNext() {
+      // 停留 QUOTE_STAY 后淡出
+      quoteTimers.push(setTimeout(function() {
         hideQuote();
-        setTimeout(function() {
+        // 淡出 QUOTE_FADE 后换句并渐现
+        quoteTimers.push(setTimeout(function() {
           quoteIndex = (quoteIndex + 1) % QUOTES.length;
-          // 淡入
           showQuote(QUOTES[quoteIndex]);
-          cycle();
-        }, QUOTE_FADE);
-      }, QUOTE_STAY);
+          scheduleNext();
+        }, QUOTE_FADE));
+      }, QUOTE_STAY));
     }
 
-    // 第一句也按正常周期
-    quoteTimer = setTimeout(function() {
-      hideQuote();
-      setTimeout(function() {
-        quoteIndex = (quoteIndex + 1) % QUOTES.length;
-        showQuote(QUOTES[quoteIndex]);
-        cycle();
-      }, QUOTE_FADE);
-    }, QUOTE_STAY);
+    scheduleNext();
   }
 
   function stopQuoteCycle() {
-    if (quoteTimer) {
-      clearTimeout(quoteTimer);
-      quoteTimer = null;
-    }
+    clearQuoteTimers();
     quoteText.classList.remove('quote-visible', 'quote-leaving');
-    quoteText.style.opacity = '0';
-    quoteText.style.transform = 'translateY(8px)';
   }
 
   // ========== 粒子背景 ==========
