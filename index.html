@@ -160,7 +160,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: clamp(32px, 7vh, 56px);
+    gap: clamp(22px, 5vh, 40px);
     width: 100%;
   }
   .setup-page.hidden { display: none; }
@@ -336,6 +336,146 @@
     text-align: center;
     line-height: 2;
     font-weight: 300;
+  }
+
+  /* ---------- 预设列表 ---------- */
+  .preset-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .preset-list {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    padding: 4px 2px 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .preset-list::-webkit-scrollbar { display: none; }
+
+  .preset-empty-hint {
+    font-family: "Exo 2", sans-serif;
+    font-size: clamp(11px, 2.2vw, 12px);
+    color: rgba(225, 232, 245, 0.15);
+    text-align: center;
+    padding: 10px 0;
+    letter-spacing: 0.1em;
+    width: 100%;
+  }
+
+  .preset-card {
+    flex-shrink: 0;
+    min-width: clamp(92px, 24vw, 120px);
+    padding: 10px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    border: 1px solid var(--glass-edge);
+    box-shadow: inset 0 1px 0 var(--glass-spec);
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.15s;
+  }
+
+  .preset-card:active { transform: scale(0.95); }
+
+  .preset-card.selected {
+    border-color: var(--accent-soft);
+    box-shadow: inset 0 1px 0 var(--glass-spec), 0 0 16px rgba(245, 200, 66, 0.12);
+  }
+
+  .preset-card-title {
+    font-family: "Exo 2", "PingFang SC", sans-serif;
+    font-size: clamp(11px, 2.5vw, 13px);
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 88px;
+    margin-bottom: 2px;
+    font-weight: 400;
+  }
+
+  .preset-card-time {
+    font-family: "Rajdhani", sans-serif;
+    font-size: clamp(15px, 3.5vw, 18px);
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+
+  .preset-card.selected .preset-card-time {
+    color: var(--accent);
+  }
+
+  .preset-card-delete {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(225, 232, 245, 0.25);
+    font-size: 13px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s, background 0.2s, color 0.2s;
+  }
+
+  .preset-card:hover .preset-card-delete { opacity: 1; }
+
+  .preset-card-delete:active {
+    background: rgba(255, 80, 80, 0.2);
+    color: #ff6b6b;
+    opacity: 1;
+  }
+
+  /* ---------- 按钮行 ---------- */
+  .btn-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+
+  .save-btn {
+    padding: 15px 28px;
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    border: 1px solid var(--glass-edge);
+    color: var(--text-dim);
+    font-family: "Exo 2", sans-serif;
+    font-size: clamp(13px, 2.8vw, 15px);
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+    cursor: pointer;
+    border-radius: 60px;
+    transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    box-shadow: inset 0 1px 0 var(--glass-spec);
+  }
+
+  .save-btn:hover {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .save-btn:active { transform: scale(0.96); }
+
+  .save-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 
   /* ================= 倒计时页 ================= */
@@ -804,6 +944,10 @@
   <div class="setup-page" id="setupPage">
     <div class="setup-title">Set The Limit</div>
 
+    <div class="preset-section">
+      <div class="preset-list" id="presetList"></div>
+    </div>
+
     <input class="title-input" id="titleInput" type="text" placeholder="为这段倒计时命名…" maxlength="20" autocomplete="off">
 
     <div class="picker-row">
@@ -829,7 +973,10 @@
       </div>
     </div>
 
-    <button class="start-btn" id="startBtn">开 始 倒 计 时</button>
+    <div class="btn-row">
+      <button class="save-btn" id="saveBtn">保 存</button>
+      <button class="start-btn" id="startBtn">开 始 倒 计 时</button>
+    </div>
 
     <div class="setup-poem">
       设定一个期限<br>让等待有了形状
@@ -888,6 +1035,8 @@
   var restartBtn = document.getElementById('restartBtn');
   var titleInput = document.getElementById('titleInput');
   var countdownTag = document.getElementById('countdownTag');
+  var presetList = document.getElementById('presetList');
+  var saveBtn = document.getElementById('saveBtn');
 
   // ========== 状态 ==========
   var totalSeconds = 0;
@@ -897,6 +1046,138 @@
   var isFinished = false;
   var currentDigits = [0, 0, 0, 5, 0, 0];
   var cardEls = [];
+
+  // ========== 预设持久化 ==========
+  var STORAGE_KEY = 'dark_countdown_presets';
+  var presets = [];
+  var selectedPresetId = null;
+
+  function loadPresets() {
+    try {
+      var data = localStorage.getItem(STORAGE_KEY);
+      presets = data ? JSON.parse(data) : [];
+    } catch (e) {
+      presets = [];
+    }
+  }
+
+  function persistPresets() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+    } catch (e) {}
+  }
+
+  function formatPresetTime(h, m, s) {
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function renderPresetList() {
+    presetList.innerHTML = '';
+
+    if (presets.length === 0) {
+      var hint = document.createElement('div');
+      hint.className = 'preset-empty-hint';
+      hint.textContent = '保存你的第一个预设';
+      presetList.appendChild(hint);
+      return;
+    }
+
+    for (var i = 0; i < presets.length; i++) {
+      var p = presets[i];
+      var card = document.createElement('div');
+      card.className = 'preset-card' + (p.id === selectedPresetId ? ' selected' : '');
+      card.dataset.id = p.id;
+
+      var titleEl = document.createElement('div');
+      titleEl.className = 'preset-card-title';
+      titleEl.textContent = p.title || '未命名';
+
+      var timeEl = document.createElement('div');
+      timeEl.className = 'preset-card-time';
+      timeEl.textContent = formatPresetTime(p.hours, p.minutes, p.seconds);
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'preset-card-delete';
+      delBtn.innerHTML = '&times;';
+      delBtn.dataset.id = p.id;
+
+      card.appendChild(titleEl);
+      card.appendChild(timeEl);
+      card.appendChild(delBtn);
+      presetList.appendChild(card);
+    }
+  }
+
+  function selectPreset(id) {
+    if (selectedPresetId === id) {
+      // 再次点击已选中的 → 取消选中，进入新建模式
+      selectedPresetId = null;
+      saveBtn.textContent = '保 存';
+      renderPresetList();
+      return;
+    }
+
+    var preset = null;
+    for (var i = 0; i < presets.length; i++) {
+      if (presets[i].id === id) { preset = presets[i]; break; }
+    }
+    if (!preset) return;
+
+    selectedPresetId = id;
+    pickerHours = preset.hours;
+    pickerMinutes = preset.minutes;
+    pickerSeconds = preset.seconds;
+    titleInput.value = preset.title || '';
+    saveBtn.textContent = '更 新';
+    updateSetupDisplay();
+    renderPresetList();
+  }
+
+  function saveCurrentPreset() {
+    var title = titleInput.value.trim();
+    var hasTime = pickerHours > 0 || pickerMinutes > 0 || pickerSeconds > 0;
+    if (!hasTime) return;
+
+    if (selectedPresetId) {
+      for (var i = 0; i < presets.length; i++) {
+        if (presets[i].id === selectedPresetId) {
+          presets[i].title = title;
+          presets[i].hours = pickerHours;
+          presets[i].minutes = pickerMinutes;
+          presets[i].seconds = pickerSeconds;
+          break;
+        }
+      }
+    } else {
+      var newPreset = {
+        id: 'p_' + Date.now(),
+        title: title,
+        hours: pickerHours,
+        minutes: pickerMinutes,
+        seconds: pickerSeconds
+      };
+      presets.push(newPreset);
+      selectedPresetId = newPreset.id;
+      saveBtn.textContent = '更 新';
+    }
+
+    persistPresets();
+    renderPresetList();
+  }
+
+  function deletePreset(id) {
+    var newPresets = [];
+    for (var i = 0; i < presets.length; i++) {
+      if (presets[i].id !== id) newPresets.push(presets[i]);
+    }
+    presets = newPresets;
+    if (selectedPresetId === id) {
+      selectedPresetId = null;
+      saveBtn.textContent = '保 存';
+    }
+    persistPresets();
+    renderPresetList();
+  }
 
   // ========== 金句列表 ==========
   var QUOTES = [
@@ -1243,7 +1524,9 @@
     hoursVal.textContent = String(pickerHours).padStart(2, '0');
     minutesVal.textContent = String(pickerMinutes).padStart(2, '0');
     secondsVal.textContent = String(pickerSeconds).padStart(2, '0');
-    startBtn.disabled = !(pickerHours > 0 || pickerMinutes > 0 || pickerSeconds > 0);
+    var hasTime = pickerHours > 0 || pickerMinutes > 0 || pickerSeconds > 0;
+    startBtn.disabled = !hasTime;
+    saveBtn.disabled = !hasTime;
   }
 
   function stepValue(target, isUp) {
@@ -1303,6 +1586,28 @@
     showSetup();
   });
 
+  // 预设列表交互（事件委托）
+  presetList.addEventListener('click', function(e) {
+    var delBtn = e.target.closest('.preset-card-delete');
+    if (delBtn) {
+      e.stopPropagation();
+      deletePreset(delBtn.dataset.id);
+      return;
+    }
+    var card = e.target.closest('.preset-card');
+    if (card) {
+      selectPreset(card.dataset.id);
+    }
+  });
+
+  // 保存按钮
+  saveBtn.addEventListener('click', function() {
+    saveCurrentPreset();
+  });
+
+  // 初始化
+  loadPresets();
+  renderPresetList();
   updateSetupDisplay();
   showSetup();
 })();
