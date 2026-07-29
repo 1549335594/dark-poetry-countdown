@@ -3,18 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>倒计时 · 暗黑诗意</title>
+<title>倒计时 · 液态玻璃</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500&family=Rajdhani:wght@300;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #030304;
+    --bg: #050608;
     --accent: #f5c842;
     --accent-soft: rgba(245, 200, 66, 0.35);
-    --card-radius: 14px;
-    --card-w: clamp(46px, 13.5vw, 104px);
+    --glass-tint: rgba(255, 255, 255, 0.045);
+    --glass-edge: rgba(255, 255, 255, 0.14);
+    --glass-spec: rgba(255, 255, 255, 0.22);
+    --text: rgba(225, 232, 245, 0.88);
+    --text-dim: rgba(225, 232, 245, 0.35);
+    --card-radius: 16px;
+    --card-w: clamp(46px, 13.5vw, 100px);
     --card-h: calc(var(--card-w) * 1.5);
     --gap: clamp(4px, 1vw, 10px);
     --colon-w: clamp(8px, 2vw, 16px);
     --flip-ms: 350ms;
+    --blur-amount: 26px;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -28,80 +37,90 @@
   }
 
   body {
-    color: #e8e2d4;
-    font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    color: var(--text);
+    font-family: "Exo 2", "PingFang SC", "Microsoft YaHei", sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     -webkit-user-select: none;
-    background:
-      radial-gradient(ellipse 90% 55% at 50% -10%, rgba(64, 48, 96, 0.28), transparent 62%),
-      radial-gradient(ellipse 70% 50% at 85% 115%, rgba(22, 34, 66, 0.35), transparent 60%),
-      radial-gradient(ellipse 50% 40% at 10% 100%, rgba(52, 40, 18, 0.18), transparent 65%),
-      var(--bg);
+    background: var(--bg);
   }
 
-  /* ================= 动态背景层 ================= */
-  .bg-fx {
+  /* ================= 液态背景 ================= */
+  .liquid-bg {
     position: fixed;
     inset: 0;
     overflow: hidden;
-    pointer-events: none;
     z-index: 0;
   }
 
-  .aurora {
+  .blob {
     position: absolute;
     border-radius: 50%;
-    filter: blur(90px);
+    filter: blur(70px);
     will-change: transform;
+    mix-blend-mode: screen;
   }
 
-  .aurora-1 {
-    width: 55vmax; height: 55vmax;
-    left: -18vmax; top: -20vmax;
-    background: radial-gradient(circle, rgba(88, 60, 140, 0.20), transparent 65%);
-    animation: drift-a 26s ease-in-out infinite alternate;
+  .blob-1 {
+    width: 60vmax; height: 60vmax;
+    left: -20vmax; top: -25vmax;
+    background: radial-gradient(circle, rgba(74, 29, 150, 0.55), transparent 60%);
+    animation: flow-1 28s ease-in-out infinite alternate;
   }
 
-  .aurora-2 {
-    width: 48vmax; height: 48vmax;
-    right: -16vmax; bottom: -18vmax;
-    background: radial-gradient(circle, rgba(30, 56, 110, 0.22), transparent 65%);
-    animation: drift-b 32s ease-in-out infinite alternate;
+  .blob-2 {
+    width: 50vmax; height: 50vmax;
+    right: -18vmax; bottom: -20vmax;
+    background: radial-gradient(circle, rgba(0, 109, 119, 0.5), transparent 60%);
+    animation: flow-2 34s ease-in-out infinite alternate;
   }
 
-  .aurora-3 {
-    width: 34vmax; height: 34vmax;
-    left: 30vw; top: 55vh;
-    background: radial-gradient(circle, rgba(150, 112, 32, 0.10), transparent 62%);
-    animation: drift-c 22s ease-in-out infinite alternate;
+  .blob-3 {
+    width: 40vmax; height: 40vmax;
+    left: 35vw; top: 50vh;
+    background: radial-gradient(circle, rgba(157, 23, 77, 0.4), transparent 62%);
+    animation: flow-3 24s ease-in-out infinite alternate;
   }
 
-  @keyframes drift-a {
+  .blob-4 {
+    width: 30vmax; height: 30vmax;
+    right: 20vw; top: 10vh;
+    background: radial-gradient(circle, rgba(30, 58, 138, 0.45), transparent 62%);
+    animation: flow-4 31s ease-in-out infinite alternate;
+  }
+
+  @keyframes flow-1 {
     0%   { transform: translate3d(0, 0, 0) scale(1); }
-    100% { transform: translate3d(9vmax, 7vmax, 0) scale(1.15); }
+    50%  { transform: translate3d(8vmax, 5vmax, 0) scale(1.1); }
+    100% { transform: translate3d(-4vmax, 10vmax, 0) scale(0.95); }
   }
-  @keyframes drift-b {
-    0%   { transform: translate3d(0, 0, 0) scale(1.1); }
-    100% { transform: translate3d(-8vmax, -6vmax, 0) scale(0.95); }
+  @keyframes flow-2 {
+    0%   { transform: translate3d(0, 0, 0) scale(1.05); }
+    50%  { transform: translate3d(-6vmax, -4vmax, 0) scale(0.9); }
+    100% { transform: translate3d(4vmax, -8vmax, 0) scale(1.15); }
   }
-  @keyframes drift-c {
+  @keyframes flow-3 {
     0%   { transform: translate3d(0, 0, 0); }
-    50%  { transform: translate3d(-6vmax, -8vmax, 0); }
-    100% { transform: translate3d(5vmax, -3vmax, 0); }
+    33%  { transform: translate3d(-7vmax, -6vmax, 0); }
+    66%  { transform: translate3d(5vmax, -3vmax, 0); }
+    100% { transform: translate3d(-3vmax, 4vmax, 0); }
+  }
+  @keyframes flow-4 {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    100% { transform: translate3d(-5vmax, 6vmax, 0) scale(1.2); }
   }
 
-  /* 噪点纹理，增加胶片质感 */
-  .bg-noise {
+  /* 噪点质感 */
+  .grain {
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 1;
-    opacity: 0.035;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   #particles {
@@ -124,6 +143,18 @@
     padding: 16px;
   }
 
+  /* ================= 通用玻璃材质 ================= */
+  .glass {
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(1.6) brightness(1.06);
+    backdrop-filter: blur(var(--blur-amount)) saturate(1.6) brightness(1.06);
+    border: 1px solid var(--glass-edge);
+    box-shadow:
+      inset 0 1px 0 var(--glass-spec),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+      0 8px 32px rgba(0, 0, 0, 0.35);
+  }
+
   /* ================= 设置页 ================= */
   .setup-page {
     display: flex;
@@ -135,11 +166,13 @@
   .setup-page.hidden { display: none; }
 
   .setup-title {
-    font-size: clamp(11px, 2.2vw, 13px);
-    color: rgba(232, 226, 212, 0.28);
-    letter-spacing: 0.6em;
-    text-indent: 0.6em;
-    font-weight: 300;
+    font-family: "Rajdhani", sans-serif;
+    font-size: clamp(12px, 2.4vw, 14px);
+    color: var(--text-dim);
+    letter-spacing: 0.55em;
+    text-indent: 0.55em;
+    font-weight: 400;
+    text-transform: uppercase;
   }
 
   .picker-row {
@@ -156,32 +189,35 @@
   }
 
   .picker-label {
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(10px, 2vw, 11px);
-    color: rgba(232, 226, 212, 0.3);
-    letter-spacing: 0.4em;
-    text-indent: 0.4em;
+    color: var(--text-dim);
+    letter-spacing: 0.35em;
+    text-indent: 0.35em;
+    font-weight: 300;
   }
 
   .picker-btn {
-    width: clamp(46px, 13vw, 64px);
+    width: clamp(46px, 13vw, 62px);
     height: clamp(32px, 9vw, 42px);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    background: linear-gradient(160deg, rgba(255,255,255,0.06), rgba(255,255,255,0.015));
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    color: rgba(232, 226, 212, 0.45);
-    font-size: clamp(13px, 3.5vw, 17px);
+    border: 1px solid var(--glass-edge);
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    color: var(--text-dim);
+    font-size: clamp(12px, 3vw, 15px);
     cursor: pointer;
-    border-radius: 10px;
+    border-radius: 12px;
     transition: color 0.2s, border-color 0.2s, background 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
     touch-action: none;
+    box-shadow: inset 0 1px 0 var(--glass-spec);
   }
 
   .picker-btn:active {
-    background: rgba(245, 200, 66, 0.1);
+    background: rgba(245, 200, 66, 0.12);
     color: var(--accent);
     border-color: var(--accent-soft);
   }
@@ -192,58 +228,77 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: "Rajdhani", sans-serif;
     font-size: clamp(32px, 9vw, 52px);
-    font-weight: 200;
+    font-weight: 300;
     font-variant-numeric: tabular-nums;
-    color: #f2ecdc;
-    text-shadow: 0 0 24px rgba(245, 200, 66, 0.12);
-    background: linear-gradient(165deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02) 45%, rgba(0,0,0,0.25));
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 14px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 32px rgba(0,0,0,0.45);
+    color: var(--text);
+    text-shadow: 0 0 20px rgba(245, 200, 66, 0.1);
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(1.6) brightness(1.06);
+    backdrop-filter: blur(var(--blur-amount)) saturate(1.6) brightness(1.06);
+    border: 1px solid var(--glass-edge);
+    border-radius: 16px;
+    box-shadow:
+      inset 0 1px 0 var(--glass-spec),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+      0 10px 36px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .picker-value::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.07), transparent);
+    pointer-events: none;
+    border-radius: 16px 16px 0 0;
   }
 
   .picker-colon {
+    font-family: "Rajdhani", sans-serif;
     font-size: clamp(20px, 5.5vw, 32px);
-    color: rgba(232, 226, 212, 0.25);
+    color: var(--text-dim);
     padding-bottom: clamp(26px, 7vw, 44px);
-    font-weight: 100;
+    font-weight: 300;
   }
 
   .start-btn {
     padding: 15px 52px;
-    background: linear-gradient(160deg, rgba(245,200,66,0.08), rgba(245,200,66,0.02));
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(1.6);
+    backdrop-filter: blur(var(--blur-amount)) saturate(1.6);
     border: 1px solid var(--accent-soft);
     color: var(--accent);
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(13px, 2.8vw, 15px);
     letter-spacing: 0.4em;
     text-indent: 0.4em;
     cursor: pointer;
     border-radius: 60px;
     transition: box-shadow 0.4s, border-color 0.4s, transform 0.15s;
-    font-family: inherit;
+    box-shadow: inset 0 1px 0 var(--glass-spec), 0 8px 32px rgba(0,0,0,0.3);
   }
 
   .start-btn:hover {
     border-color: var(--accent);
-    box-shadow: 0 0 36px rgba(245, 200, 66, 0.18), inset 0 0 18px rgba(245,200,66,0.05);
+    box-shadow: 0 0 36px rgba(245, 200, 66, 0.2), inset 0 1px 0 var(--glass-spec), inset 0 0 20px rgba(245,200,66,0.06);
   }
 
   .start-btn:active { transform: scale(0.96); }
 
   .start-btn:disabled {
-    opacity: 0.25;
+    opacity: 0.3;
     cursor: not-allowed;
-    box-shadow: none;
+    box-shadow: inset 0 1px 0 var(--glass-spec);
   }
 
   .setup-poem {
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(11px, 2.2vw, 12px);
-    color: rgba(232, 226, 212, 0.14);
+    color: rgba(225, 232, 245, 0.15);
     letter-spacing: 0.25em;
     text-align: center;
     line-height: 2;
@@ -255,25 +310,27 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: clamp(36px, 8vh, 64px);
+    gap: clamp(36px, 8vh, 60px);
     width: 100%;
   }
   .countdown-page.hidden { display: none; }
 
   .countdown-tag {
+    font-family: "Rajdhani", sans-serif;
     font-size: clamp(10px, 2vw, 11px);
-    color: rgba(232, 226, 212, 0.22);
+    color: var(--text-dim);
     letter-spacing: 0.7em;
     text-indent: 0.7em;
-    font-weight: 300;
+    font-weight: 400;
+    text-transform: uppercase;
   }
 
-  /* ---------- 翻转时钟 ---------- */
+  /* ---------- 翻转时钟（液态玻璃卡牌） ---------- */
   .flip-clock {
     display: flex;
     align-items: center;
     gap: var(--gap);
-    filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.55));
+    filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.5));
   }
 
   .flip-unit {
@@ -286,25 +343,26 @@
     position: relative;
     width: 100%;
     height: 100%;
-    perspective: 700px;
+    perspective: 800px;
   }
 
-  /* 翻页轴点装饰（左右两侧） */
+  /* 翻页轴点 */
   .flip-card::before,
   .flip-card::after {
     content: '';
     position: absolute;
     top: 50%;
-    width: 3px;
-    height: 9px;
+    width: 4px;
+    height: 10px;
     transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.75);
     border-radius: 2px;
     z-index: 11;
     pointer-events: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
   }
-  .flip-card::before { left: -1px; }
-  .flip-card::after { right: -1px; }
+  .flip-card::before { left: -2px; }
+  .flip-card::after { right: -2px; }
 
   .card-half {
     position: absolute;
@@ -312,9 +370,7 @@
     width: 100%;
     height: 50%;
     overflow: hidden;
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-edge);
   }
 
   .card-top {
@@ -322,8 +378,23 @@
     z-index: 2;
     border-radius: var(--card-radius) var(--card-radius) 0 0;
     border-bottom: none;
-    background: linear-gradient(170deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03) 55%, rgba(0,0,0,0.12));
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+    background: linear-gradient(170deg, rgba(255,255,255,0.09), rgba(255,255,255,0.025) 50%, rgba(0,0,0,0.08));
+    -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(1.6) brightness(1.06);
+    backdrop-filter: blur(var(--blur-amount)) saturate(1.6) brightness(1.06);
+    box-shadow:
+      inset 0 1px 0 var(--glass-spec),
+      inset 0 -1px 0 rgba(0,0,0,0.12);
+  }
+
+  /* 顶部高光反射 */
+  .card-top::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.06), transparent);
+    pointer-events: none;
+    z-index: 1;
   }
 
   .card-bottom {
@@ -331,8 +402,12 @@
     z-index: 2;
     border-radius: 0 0 var(--card-radius) var(--card-radius);
     border-top: none;
-    background: linear-gradient(175deg, rgba(0,0,0,0.18), rgba(0,0,0,0.38));
-    box-shadow: inset 0 -1px 0 rgba(255,255,255,0.03);
+    background: linear-gradient(175deg, rgba(0,0,0,0.1), rgba(0,0,0,0.28));
+    -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(1.6) brightness(0.96);
+    backdrop-filter: blur(var(--blur-amount)) saturate(1.6) brightness(0.96);
+    box-shadow:
+      inset 0 -1px 0 rgba(255,255,255,0.05),
+      inset 0 1px 0 rgba(0,0,0,0.15);
   }
 
   .card-bottom-flip {
@@ -340,7 +415,9 @@
     z-index: 4;
     border-radius: 0 0 var(--card-radius) var(--card-radius);
     border-top: none;
-    background: linear-gradient(175deg, rgba(0,0,0,0.22), rgba(0,0,0,0.42));
+    background: linear-gradient(175deg, rgba(0,0,0,0.14), rgba(0,0,0,0.32));
+    border: 1px solid var(--glass-edge);
+    border-top: none;
     transform-origin: top center;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
@@ -354,7 +431,9 @@
     z-index: 5;
     border-radius: var(--card-radius) var(--card-radius) 0 0;
     border-bottom: none;
-    background: linear-gradient(170deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035) 55%, rgba(0,0,0,0.12));
+    background: linear-gradient(170deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03) 50%, rgba(0,0,0,0.08));
+    border: 1px solid var(--glass-edge);
+    border-bottom: none;
     transform-origin: bottom center;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
@@ -363,7 +442,7 @@
     will-change: transform;
   }
 
-  /* 数字 —— 绝对定位修复裁剪问题（margin百分比相对宽度的bug） */
+  /* 数字 —— 绝对定位 */
   .num {
     position: absolute;
     left: 0;
@@ -373,14 +452,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: calc(var(--card-w) * 0.98);
-    font-weight: 200;
+    font-family: "Rajdhani", sans-serif;
+    font-size: calc(var(--card-w) * 1.0);
+    font-weight: 300;
     font-variant-numeric: tabular-nums;
-    color: #f4eedd;
+    color: var(--text);
     text-shadow:
-      0 0 18px rgba(245, 200, 66, 0.14),
-      0 0 42px rgba(245, 200, 66, 0.05);
+      0 0 16px rgba(245, 200, 66, 0.12),
+      0 0 36px rgba(120, 180, 255, 0.06);
     line-height: 1;
+    z-index: 2;
   }
 
   .card-bottom .num,
@@ -394,8 +475,8 @@
     top: 50%;
     left: 3px; right: 3px;
     height: 1px;
-    background: rgba(0, 0, 0, 0.7);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+    background: linear-gradient(to right, transparent, rgba(0,0,0,0.6) 15%, rgba(0,0,0,0.6) 85%, transparent);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
     z-index: 10;
     pointer-events: none;
   }
@@ -421,7 +502,7 @@
     100% { transform: rotateX(0.001deg); }
   }
 
-  /* ---------- 冒号（CSS动画闪烁，替代setInterval） ---------- */
+  /* ---------- 冒号 ---------- */
   .flip-colon {
     width: var(--colon-w);
     display: flex;
@@ -435,8 +516,8 @@
     width: clamp(4px, 1.1vw, 7px);
     height: clamp(4px, 1.1vw, 7px);
     border-radius: 50%;
-    background: rgba(244, 238, 221, 0.55);
-    box-shadow: 0 0 10px rgba(245, 200, 66, 0.25);
+    background: rgba(225, 232, 245, 0.6);
+    box-shadow: 0 0 8px rgba(245, 200, 66, 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
   }
 
   .flip-clock.running .colon-dot {
@@ -445,40 +526,51 @@
 
   @keyframes colonBlink {
     0%   { opacity: 1; }
-    50%  { opacity: 0.12; }
+    50%  { opacity: 0.15; }
     100% { opacity: 1; }
   }
 
-  /* ---------- 进度条（transform合成器驱动，零重排） ---------- */
+  /* ---------- 进度条（玻璃管 + 液态金） ---------- */
   .progress-wrap {
     width: 100%;
     max-width: 460px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
+  }
+
+  .progress-bar-row {
+    position: relative;
+    width: 100%;
   }
 
   .progress-track {
     width: 100%;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.05);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+    height: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    backdrop-filter: blur(12px) saturate(1.4);
+    border: 1px solid var(--glass-edge);
+    border-radius: 8px;
+    box-shadow:
+      inset 0 1px 2px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255,255,255,0.06);
     position: relative;
+    overflow: visible;
   }
 
   .progress-fill {
     position: absolute;
     inset: 0;
-    border-radius: 6px;
-    background: linear-gradient(90deg, #b8860b, var(--accent) 60%, #ffe9a8);
+    border-radius: 8px;
+    background: linear-gradient(90deg, #9a6f0a, var(--accent) 50%, #ffe9a8);
     transform-origin: left center;
     transform: scaleX(1);
     will-change: transform;
-    box-shadow: 0 0 18px rgba(245, 200, 66, 0.55), 0 0 6px rgba(245, 200, 66, 0.35);
+    box-shadow:
+      0 0 16px rgba(245, 200, 66, 0.55),
+      0 0 6px rgba(245, 200, 66, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
 
   .progress-fill::after {
@@ -486,17 +578,11 @@
     position: absolute;
     right: -1px;
     top: 50%;
-    width: 7px; height: 7px;
+    width: 8px; height: 8px;
     border-radius: 50%;
     background: #fff7dd;
     transform: translateY(-50%);
-    box-shadow: 0 0 10px var(--accent), 0 0 22px var(--accent);
-  }
-
-  /* 进度条行：进度条 + 百分比 */
-  .progress-bar-row {
-    position: relative;
-    width: 100%;
+    box-shadow: 0 0 10px var(--accent), 0 0 22px var(--accent), inset 0 1px 0 rgba(255,255,255,0.5);
   }
 
   .progress-percent {
@@ -505,12 +591,13 @@
     left: 100%;
     transform: translateY(-50%);
     color: var(--accent);
-    font-size: clamp(11px, 2.5vw, 13px);
+    font-family: "Rajdhani", sans-serif;
+    font-size: clamp(12px, 2.8vw, 14px);
     font-variant-numeric: tabular-nums;
+    font-weight: 500;
     white-space: nowrap;
     pointer-events: none;
-    text-shadow: 0 0 10px rgba(245, 200, 66, 0.4);
-    font-weight: 400;
+    text-shadow: 0 0 10px rgba(245, 200, 66, 0.45);
   }
 
   .progress-time {
@@ -521,8 +608,9 @@
   }
 
   .quote-text {
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(13px, 3vw, 16px);
-    color: rgba(232, 226, 212, 0);
+    color: rgba(225, 232, 245, 0);
     letter-spacing: 0.18em;
     text-align: center;
     line-height: 1.6;
@@ -535,8 +623,8 @@
   .quote-text.quote-visible {
     opacity: 1;
     transform: translateY(0);
-    color: rgba(232, 226, 212, 0.5);
-    text-shadow: 0 0 4px rgba(245, 200, 66, 0.08);
+    color: rgba(225, 232, 245, 0.55);
+    text-shadow: 0 0 6px rgba(245, 200, 66, 0.06);
   }
 
   .quote-text.quote-leaving {
@@ -551,11 +639,11 @@
     left: max(14px, env(safe-area-inset-left));
     width: 38px; height: 38px;
     border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    color: rgba(232, 226, 212, 0.3);
+    border: 1px solid var(--glass-edge);
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    backdrop-filter: blur(14px) saturate(1.4);
+    color: var(--text-dim);
     font-size: 15px;
     cursor: pointer;
     display: flex;
@@ -563,11 +651,12 @@
     justify-content: center;
     z-index: 20;
     transition: color 0.3s, border-color 0.3s;
+    box-shadow: inset 0 1px 0 var(--glass-spec), 0 4px 16px rgba(0,0,0,0.3);
   }
 
   .reset-btn:hover, .reset-btn:active {
-    color: rgba(232, 226, 212, 0.7);
-    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.25);
   }
 
   /* ---------- 结束状态 ---------- */
@@ -580,25 +669,28 @@
   .finished-state.show { display: flex; }
 
   .finished-text {
-    font-size: clamp(15px, 3.8vw, 19px);
+    font-family: "Rajdhani", sans-serif;
+    font-size: clamp(16px, 4vw, 20px);
     color: var(--accent);
     letter-spacing: 0.35em;
     text-indent: 0.35em;
-    font-weight: 300;
-    text-shadow: 0 0 24px rgba(245, 200, 66, 0.35);
+    font-weight: 500;
+    text-shadow: 0 0 24px rgba(245, 200, 66, 0.4);
     animation: pulse-text 2.4s ease-in-out infinite;
   }
 
   @keyframes pulse-text {
-    0%, 100% { opacity: 0.55; }
+    0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
   }
 
   .finished-sub {
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(10px, 2vw, 12px);
-    color: rgba(232, 226, 212, 0.2);
+    color: rgba(225, 232, 245, 0.22);
     letter-spacing: 0.3em;
     text-indent: 0.3em;
+    font-weight: 300;
   }
 
   .flip-clock.finished .flip-card {
@@ -606,36 +698,40 @@
   }
 
   @keyframes card-glow {
-    0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(1.35); }
+    0%, 100% { filter: brightness(1) drop-shadow(0 20px 50px rgba(0,0,0,0.5)); }
+    50% { filter: brightness(1.3) drop-shadow(0 20px 50px rgba(245,200,66,0.15)); }
   }
 
   .restart-btn {
     padding: 13px 40px;
-    background: linear-gradient(160deg, rgba(245,200,66,0.08), rgba(245,200,66,0.02));
+    background: var(--glass-tint);
+    -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(1.6);
+    backdrop-filter: blur(var(--blur-amount)) saturate(1.6);
     border: 1px solid var(--accent-soft);
     color: var(--accent);
+    font-family: "Exo 2", sans-serif;
     font-size: clamp(12px, 2.5vw, 14px);
     letter-spacing: 0.35em;
     text-indent: 0.35em;
     cursor: pointer;
     border-radius: 50px;
-    font-family: inherit;
     transition: box-shadow 0.4s, border-color 0.4s, transform 0.15s;
+    box-shadow: inset 0 1px 0 var(--glass-spec), 0 8px 28px rgba(0,0,0,0.3);
   }
 
   .restart-btn:hover {
     border-color: var(--accent);
-    box-shadow: 0 0 28px rgba(245, 200, 66, 0.18);
+    box-shadow: 0 0 28px rgba(245, 200, 66, 0.2), inset 0 1px 0 var(--glass-spec);
   }
   .restart-btn:active { transform: scale(0.96); }
 
   /* ---------- 响应式 ---------- */
   @media (min-width: 768px) {
     :root {
-      --card-w: 100px;
+      --card-w: 96px;
       --gap: 10px;
       --colon-w: 16px;
+      --blur-amount: 30px;
     }
   }
 
@@ -644,51 +740,53 @@
       --card-w: 44px;
       --gap: 4px;
       --colon-w: 8px;
-      --card-radius: 10px;
+      --card-radius: 12px;
+      --blur-amount: 20px;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .aurora, .flip-clock.running .colon-dot { animation: none; }
+    .blob, .flip-clock.running .colon-dot { animation: none; }
   }
 </style>
 </head>
 <body>
 
-<!-- 动态背景 -->
-<div class="bg-fx">
-  <div class="aurora aurora-1"></div>
-  <div class="aurora aurora-2"></div>
-  <div class="aurora aurora-3"></div>
+<!-- 液态背景 -->
+<div class="liquid-bg">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
 </div>
-<div class="bg-noise"></div>
+<div class="grain"></div>
 <canvas id="particles"></canvas>
 
 <div class="app">
   <!-- ===== 设置页 ===== -->
   <div class="setup-page" id="setupPage">
-    <div class="setup-title">设 定 期 限</div>
+    <div class="setup-title">Set The Limit</div>
 
     <div class="picker-row">
       <div class="picker-col">
         <button class="picker-btn up" data-target="hours" aria-label="增加小时">&#9650;</button>
         <div class="picker-value" id="hoursVal">00</div>
         <button class="picker-btn down" data-target="hours" aria-label="减少小时">&#9660;</button>
-        <span class="picker-label">时</span>
+        <span class="picker-label">HRS</span>
       </div>
       <div class="picker-colon">:</div>
       <div class="picker-col">
         <button class="picker-btn up" data-target="minutes" aria-label="增加分钟">&#9650;</button>
         <div class="picker-value" id="minutesVal">05</div>
         <button class="picker-btn down" data-target="minutes" aria-label="减少分钟">&#9660;</button>
-        <span class="picker-label">分</span>
+        <span class="picker-label">MIN</span>
       </div>
       <div class="picker-colon">:</div>
       <div class="picker-col">
         <button class="picker-btn up" data-target="seconds" aria-label="增加秒数">&#9650;</button>
         <div class="picker-value" id="secondsVal">00</div>
         <button class="picker-btn down" data-target="seconds" aria-label="减少秒数">&#9660;</button>
-        <span class="picker-label">秒</span>
+        <span class="picker-label">SEC</span>
       </div>
     </div>
 
@@ -701,7 +799,7 @@
 
   <!-- ===== 倒计时页 ===== -->
   <div class="countdown-page hidden" id="countdownPage">
-    <div class="countdown-tag">剩 余 时 间</div>
+    <div class="countdown-tag">Counting Down</div>
 
     <div class="flip-clock" id="flipClock"></div>
 
@@ -731,7 +829,7 @@
 (function() {
   'use strict';
 
-  var FLIP_MS = 350; // 与CSS --flip-ms 保持一致
+  var FLIP_MS = 350;
 
   // ========== DOM ==========
   var setupPage = document.getElementById('setupPage');
@@ -775,7 +873,6 @@
   var quoteIndex = 0;
   var quoteTimers = [];
 
-  // 电影质感：停留8秒，淡出2秒，淡入2秒
   var QUOTE_STAY = 8000;
   var QUOTE_FADE = 2000;
 
@@ -788,7 +885,6 @@
 
   function showQuote(text) {
     quoteText.textContent = text;
-    // 强制 reflow 确保 transition 重新触发
     void quoteText.offsetWidth;
     quoteText.classList.remove('quote-leaving');
     quoteText.classList.add('quote-visible');
@@ -801,7 +897,6 @@
 
   function startQuoteCycle() {
     clearQuoteTimers();
-    // 清除可能残留的 inline style，让 CSS class 生效
     quoteText.style.opacity = '';
     quoteText.style.transform = '';
     quoteText.classList.remove('quote-visible', 'quote-leaving');
@@ -810,10 +905,8 @@
     showQuote(QUOTES[0]);
 
     function scheduleNext() {
-      // 停留 QUOTE_STAY 后淡出
       quoteTimers.push(setTimeout(function() {
         hideQuote();
-        // 淡出 QUOTE_FADE 后换句并渐现
         quoteTimers.push(setTimeout(function() {
           quoteIndex = (quoteIndex + 1) % QUOTES.length;
           showQuote(QUOTES[quoteIndex]);
@@ -912,7 +1005,7 @@
 
   buildFlipClock();
 
-  // ========== 翻转（setTimeout同步，避免animationend冒泡双触发） ==========
+  // ========== 翻转 ==========
   function setStaticDigit(card, digit) {
     card.querySelector('.card-top .num').textContent = digit;
     card.querySelector('.card-bottom .num').textContent = digit;
@@ -925,10 +1018,8 @@
     var oldDigit = currentDigits[index];
     if (oldDigit === newDigit) return;
 
-    // 逻辑值立即更新
     currentDigits[index] = newDigit;
 
-    // 若上一次翻转尚未收尾，立即收尾
     if (card._flipTimer) {
       clearTimeout(card._flipTimer);
       card._flipTimer = null;
@@ -938,7 +1029,6 @@
     card.querySelector('.card-bottom-flip .num').textContent = oldDigit;
     card.querySelector('.card-top-flip .num').textContent = newDigit;
 
-    // 强制reflow，保证动画重新触发
     void card.offsetWidth;
     card.classList.add('flipping');
 
@@ -974,7 +1064,7 @@
     return h > 0 ? String(h).padStart(2, '0') + ':' + mm + ':' + ss : mm + ':' + ss;
   }
 
-  // ========== 进度条（scaleX，合成器驱动） ==========
+  // ========== 进度条 ==========
   function startProgressUpdate() {
     var update = function() {
       if (isFinished) return;
@@ -984,7 +1074,6 @@
       var pct = (remaining / totalSeconds) * 100;
       progressFill.style.transform = 'scaleX(' + (pct / 100) + ')';
 
-      // 百分比位置跟随进度条
       var trackW = progressTrack.clientWidth;
       var dotRight = trackW * (pct / 100);
       progressPercent.style.left = (dotRight + 14) + 'px';
@@ -1125,7 +1214,6 @@
     updateSetupDisplay();
   }
 
-  // 点击 + 长按加速
   var holdTimer = null;
 
   Array.prototype.forEach.call(document.querySelectorAll('.picker-btn'), function(btn) {
@@ -1172,7 +1260,6 @@
     showSetup();
   });
 
-  // 初始化
   updateSetupDisplay();
   showSetup();
 })();
