@@ -414,6 +414,25 @@
     color: var(--accent);
   }
 
+  .preset-card.running::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse-dot 2s ease-in-out infinite;
+    z-index: 2;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 0.5; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+
   .preset-card-delete {
     position: absolute;
     top: 3px;
@@ -1039,13 +1058,58 @@
   var saveBtn = document.getElementById('saveBtn');
 
   // ========== 状态 ==========
-  var totalSeconds = 0;
-  var startTimestamp = 0;
-  var secondTimerId = null;
   var rafId = null;
-  var isFinished = false;
+  var displaySecondId = null;
+  var bgTickerId = null;
   var currentDigits = [0, 0, 0, 5, 0, 0];
   var cardEls = [];
+
+  // ========== 多倒计时运行时 ==========
+  // 每个倒计时: { id, presetId, title, totalSeconds, startTimestamp, finished }
+  var activeCountdowns = {};
+  var currentCountdownId = null;
+
+  function getCurrentCountdown() {
+    return currentCountdownId ? activeCountdowns[currentCountdownId] : null;
+  }
+
+  function findActiveByPresetId(presetId) {
+    for (var id in activeCountdowns) {
+      if (activeCountdowns[id].presetId === presetId && !activeCountdowns[id].finished) {
+        return activeCountdowns[id];
+      }
+    }
+    return null;
+  }
+
+  function removeFinishedByPresetId(presetId) {
+    for (var id in activeCountdowns) {
+      if (activeCountdowns[id].presetId === presetId && activeCountdowns[id].finished) {
+        delete activeCountdowns[id];
+      }
+    }
+  }
+
+  function startBackgroundTicker() {
+    if (bgTickerId) clearInterval(bgTickerId);
+    bgTickerId = setInterval(function() {
+      var now = Date.now();
+      var changed = false;
+      for (var id in activeCountdowns) {
+        var cd = activeCountdowns[id];
+        if (cd.finished) continue;
+        var remaining = cd.totalSeconds - (now - cd.startTimestamp) / 1000;
+        if (remaining <= 0) {
+          cd.finished = true;
+          changed = true;
+          if (id === currentCountdownId) {
+            finishCountdown();
+          }
+        }
+      }
+      if (changed) renderPresetList();
+    }, 1000);
+  }
 
   // ========== 预设持久化 ==========
   var STORAGE_KEY = 'dark_countdown_presets';
@@ -1088,6 +1152,12 @@
       card.className = 'preset-card' + (p.id === selectedPresetId ? ' selected' : '');
       card.dataset.id = p.id;
 
+      // 运行中指示器
+      var active = findActiveByPresetId(p.id);
+      if (active) {
+        card.classList.add('running');
+      }
+
       var titleEl = document.createElement('div');
       titleEl.className = 'preset-card-title';
       titleEl.textContent = p.title || '未命名';
@@ -1105,6 +1175,11 @@
       card.appendChild(timeEl);
       card.appendChild(delBtn);
       presetList.appendChild(card);
+    }
+
+    // 预设运行状态可能变化，同步更新开始按钮文案
+    if (typeof updateSetupDisplay === 'function') {
+      updateSetupDisplay();
     }
   }
 
@@ -1386,14 +1461,15 @@
     return h > 0 ? String(h).padStart(2, '0') + ':' + mm + ':' + ss : mm + ':' + ss;
   }
 
-  // ========== 进度条 ==========
+  // ========== 进度条（使用当前倒计时数据） ==========
   function startProgressUpdate() {
     var update = function() {
-      if (isFinished) return;
+      var cd = getCurrentCountdown();
+      if (!cd || cd.finished) return;
 
-      var elapsed = (Date.now() - startTimestamp) / 1000;
-      var remaining = Math.max(0, totalSeconds - elapsed);
-      var pct = (remaining / totalSeconds) * 100;
+      var elapsed = (Date.now() - cd.startTimestamp) / 1000;
+      var remaining = Math.max(0, cd.totalSeconds - elapsed);
+      var pct = (remaining / cd.totalSeconds) * 100;
       progressFill.style.transform = 'scaleX(' + (pct / 100) + ')';
 
       var trackW = progressTrack.clientWidth;
@@ -1415,18 +1491,25 @@
     }
   }
 
-  // ========== 倒计时控制 ==========
-  function startCountdown() {
-    isFinished = false;
+  // ========== 显示更新（仅前台显示，不影响后台倒计时） ==========
+  function startDisplayUpdates() {
+    stopDisplayUpdates();
+
+    var cd = getCurrentCountdown();
+    if (!cd || cd.finished) return;
+
     finishedState.classList.remove('show');
     progressWrap.style.display = 'flex';
     resetBtn.style.display = 'flex';
     flipClock.classList.remove('finished');
     flipClock.classList.add('running');
 
-    startTimestamp = Date.now();
+    // 初始化数字为当前剩余时间
+    var elapsed = (Date.now() - cd.startTimestamp) / 1000;
+    var remaining = Math.max(0, cd.totalSeconds - elapsed);
+    var secRemaining = Math.ceil(remaining);
+    var initDigits = getDigitsFromSeconds(secRemaining);
 
-    var initDigits = getDigitsFromSeconds(totalSeconds);
     for (var i = 0; i < 6; i++) {
       currentDigits[i] = initDigits[i];
       var card = cardEls[i];
@@ -1438,37 +1521,49 @@
       setStaticDigit(card, initDigits[i]);
     }
 
-    progressFill.style.transform = 'scaleX(1)';
-    progressPercent.style.left = (progressTrack.clientWidth + 14) + 'px';
-    progressPercent.textContent = '100.0%';
+    var pct = (remaining / cd.totalSeconds) * 100;
+    progressFill.style.transform = 'scaleX(' + (pct / 100) + ')';
+    progressPercent.style.left = (progressTrack.clientWidth * (pct / 100) + 14) + 'px';
+    progressPercent.textContent = pct.toFixed(1) + '%';
 
     startProgressUpdate();
     startQuoteCycle();
 
-    secondTimerId = setInterval(function() {
-      var elapsed = (Date.now() - startTimestamp) / 1000;
-      var remaining = Math.max(0, totalSeconds - elapsed);
-      var secRemaining = Math.ceil(remaining);
-
-      if (secRemaining <= 0) {
-        clearInterval(secondTimerId);
-        secondTimerId = null;
-        finishCountdown();
+    // 每秒更新数字
+    displaySecondId = setInterval(function() {
+      var cd2 = getCurrentCountdown();
+      if (!cd2 || cd2.finished) {
+        clearInterval(displaySecondId);
+        displaySecondId = null;
         return;
       }
-
-      updateAllDigits(getDigitsFromSeconds(secRemaining));
+      var elapsed2 = (Date.now() - cd2.startTimestamp) / 1000;
+      var rem = Math.max(0, cd2.totalSeconds - elapsed2);
+      var secRem = Math.ceil(rem);
+      if (secRem <= 0) {
+        clearInterval(displaySecondId);
+        displaySecondId = null;
+        return;
+      }
+      updateAllDigits(getDigitsFromSeconds(secRem));
     }, 1000);
   }
 
-  function finishCountdown() {
-    isFinished = true;
+  function stopDisplayUpdates() {
     stopProgressUpdate();
     stopQuoteCycle();
-    if (secondTimerId) {
-      clearInterval(secondTimerId);
-      secondTimerId = null;
+    if (displaySecondId) {
+      clearInterval(displaySecondId);
+      displaySecondId = null;
     }
+  }
+
+  // ========== 倒计时完成 ==========
+  function finishCountdown() {
+    stopDisplayUpdates();
+
+    var cd = getCurrentCountdown();
+    if (!cd) return;
 
     updateAllDigits([0, 0, 0, 0, 0, 0]);
     progressFill.style.transform = 'scaleX(0)';
@@ -1482,21 +1577,82 @@
       finishedState.classList.add('show');
       flipClock.classList.add('finished');
     }, 1200);
+
+    renderPresetList();
   }
 
-  function stopAll() {
-    isFinished = true;
-    stopProgressUpdate();
-    stopQuoteCycle();
-    if (secondTimerId) {
-      clearInterval(secondTimerId);
-      secondTimerId = null;
+  // ========== 开始或切换倒计时 ==========
+  function startOrSwitchCountdown() {
+    var title = titleInput.value.trim();
+    var seconds = pickerHours * 3600 + pickerMinutes * 60 + pickerSeconds;
+    if (seconds <= 0) return;
+
+    // 确保有预设（未选中时自动保存）
+    if (!selectedPresetId) {
+      saveCurrentPreset();
+    }
+
+    // 检查该预设是否已有运行中的倒计时
+    var existing = findActiveByPresetId(selectedPresetId);
+    if (existing) {
+      // 切换到已运行的倒计时
+      switchToCountdown(existing.id);
+    } else {
+      // 清理该预设已完成的旧倒计时
+      removeFinishedByPresetId(selectedPresetId);
+
+      // 创建新倒计时
+      var cd = {
+        id: 'cd_' + Date.now(),
+        presetId: selectedPresetId,
+        title: title,
+        totalSeconds: seconds,
+        startTimestamp: Date.now(),
+        finished: false
+      };
+      activeCountdowns[cd.id] = cd;
+      currentCountdownId = cd.id;
+      renderPresetList();
+      showCountdownPage();
+    }
+
+    startBackgroundTicker();
+  }
+
+  function switchToCountdown(id) {
+    currentCountdownId = id;
+    renderPresetList();
+    showCountdownPage();
+  }
+
+  function showCountdownPage() {
+    var cd = getCurrentCountdown();
+    if (!cd) return;
+
+    countdownTag.textContent = cd.title || 'Counting Down';
+    setupPage.classList.add('hidden');
+    countdownPage.classList.remove('hidden');
+
+    if (cd.finished) {
+      // 已完成的倒计时 → 显示完成态
+      stopDisplayUpdates();
+      updateAllDigits([0, 0, 0, 0, 0, 0]);
+      progressFill.style.transform = 'scaleX(0)';
+      progressPercent.style.left = '14px';
+      progressPercent.textContent = '0.0%';
+      flipClock.classList.remove('running');
+      progressWrap.style.display = 'none';
+      resetBtn.style.display = 'none';
+      finishedState.classList.add('show');
+      flipClock.classList.add('finished');
+    } else {
+      startDisplayUpdates();
     }
   }
 
   // ========== 页面切换 ==========
   function showSetup() {
-    stopAll();
+    stopDisplayUpdates();
     setupPage.classList.remove('hidden');
     countdownPage.classList.add('hidden');
     finishedState.classList.remove('show');
@@ -1505,14 +1661,6 @@
     progressWrap.style.display = 'flex';
     resetBtn.style.display = 'flex';
     updateSetupDisplay();
-  }
-
-  function showCountdown() {
-    var title = titleInput.value.trim();
-    countdownTag.textContent = title || 'Counting Down';
-    setupPage.classList.add('hidden');
-    countdownPage.classList.remove('hidden');
-    startCountdown();
   }
 
   // ========== 设置页逻辑 ==========
@@ -1527,6 +1675,12 @@
     var hasTime = pickerHours > 0 || pickerMinutes > 0 || pickerSeconds > 0;
     startBtn.disabled = !hasTime;
     saveBtn.disabled = !hasTime;
+    // 选中预设有运行中倒计时 → 按钮文案切换
+    if (selectedPresetId && findActiveByPresetId(selectedPresetId)) {
+      startBtn.textContent = '继 续 倒 计 时';
+    } else {
+      startBtn.textContent = '开 始 倒 计 时';
+    }
   }
 
   function stepValue(target, isUp) {
@@ -1573,13 +1727,11 @@
   });
 
   startBtn.addEventListener('click', function() {
-    totalSeconds = pickerHours * 3600 + pickerMinutes * 60 + pickerSeconds;
-    if (totalSeconds <= 0) return;
-    showCountdown();
+    startOrSwitchCountdown();
   });
 
   resetBtn.addEventListener('click', function() {
-    if (!isFinished) showSetup();
+    showSetup();
   });
 
   restartBtn.addEventListener('click', function() {
