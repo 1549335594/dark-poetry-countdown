@@ -515,20 +515,33 @@
 
   .progress-time {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    font-size: clamp(10px, 2vw, 11px);
-    color: rgba(232, 226, 212, 0.22);
-    letter-spacing: 0.05em;
-    font-variant-numeric: tabular-nums;
+    min-height: 2em;
   }
 
   .quote-text {
-    transition: opacity 0.6s;
-    max-width: 70%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: clamp(13px, 3vw, 16px);
+    color: rgba(232, 226, 212, 0);
+    letter-spacing: 0.18em;
+    text-align: center;
+    line-height: 1.6;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 2s ease, transform 2s ease, color 2s ease;
+    font-weight: 300;
+  }
+
+  .quote-text.quote-visible {
+    opacity: 1;
+    transform: translateY(0);
+    color: rgba(232, 226, 212, 0.5);
+    text-shadow: 0 0 4px rgba(245, 200, 66, 0.08);
+  }
+
+  .quote-text.quote-leaving {
+    opacity: 0;
+    transform: translateY(-4px);
   }
 
   /* ---------- 返回按钮 ---------- */
@@ -707,7 +720,6 @@
       </div>
       <div class="progress-time">
         <span class="quote-text" id="quoteText">完成比完美更重要</span>
-        <span id="remainingTime">05:00</span>
       </div>
     </div>
 
@@ -728,7 +740,6 @@
   var progressFill = document.getElementById('progressFill');
   var progressPercent = document.getElementById('progressPercent');
   var progressTrack = document.querySelector('.progress-track');
-  var remainingTimeEl = document.getElementById('remainingTime');
   var quoteText = document.getElementById('quoteText');
   var finishedState = document.getElementById('finishedState');
   var progressWrap = document.getElementById('progressWrap');
@@ -764,27 +775,61 @@
   var quoteIndex = 0;
   var quoteTimer = null;
 
+  // 电影质感：停留8秒，淡出2秒，淡入2秒
+  var QUOTE_STAY = 8000;
+  var QUOTE_FADE = 2000;
+  var QUOTE_CYCLE = QUOTE_STAY + QUOTE_FADE * 2;
+
+  function showQuote(text) {
+    quoteText.textContent = text;
+    // 强制 reflow 确保 transition 触发
+    void quoteText.offsetWidth;
+    quoteText.classList.remove('quote-leaving');
+    quoteText.classList.add('quote-visible');
+  }
+
+  function hideQuote() {
+    quoteText.classList.remove('quote-visible');
+    quoteText.classList.add('quote-leaving');
+  }
+
   function startQuoteCycle() {
     quoteIndex = 0;
-    quoteText.textContent = QUOTES[quoteIndex];
-    quoteText.style.opacity = '1';
+    // 初始渐现
+    showQuote(QUOTES[0]);
 
-    quoteTimer = setInterval(function() {
-      quoteText.style.opacity = '0';
+    function cycle() {
+      quoteTimer = setTimeout(function() {
+        // 淡出
+        hideQuote();
+        setTimeout(function() {
+          quoteIndex = (quoteIndex + 1) % QUOTES.length;
+          // 淡入
+          showQuote(QUOTES[quoteIndex]);
+          cycle();
+        }, QUOTE_FADE);
+      }, QUOTE_STAY);
+    }
+
+    // 第一句也按正常周期
+    quoteTimer = setTimeout(function() {
+      hideQuote();
       setTimeout(function() {
         quoteIndex = (quoteIndex + 1) % QUOTES.length;
-        quoteText.textContent = QUOTES[quoteIndex];
-        quoteText.style.opacity = '1';
-      }, 600);
-    }, 5000);
+        showQuote(QUOTES[quoteIndex]);
+        cycle();
+      }, QUOTE_FADE);
+    }, QUOTE_STAY);
   }
 
   function stopQuoteCycle() {
     if (quoteTimer) {
-      clearInterval(quoteTimer);
+      clearTimeout(quoteTimer);
       quoteTimer = null;
     }
+    quoteText.classList.remove('quote-visible', 'quote-leaving');
     quoteText.style.opacity = '0';
+    quoteText.style.transform = 'translateY(8px)';
   }
 
   // ========== 粒子背景 ==========
@@ -940,7 +985,6 @@
       var remaining = Math.max(0, totalSeconds - elapsed);
       var pct = (remaining / totalSeconds) * 100;
       progressFill.style.transform = 'scaleX(' + (pct / 100) + ')';
-      remainingTimeEl.textContent = formatTime(Math.ceil(remaining));
 
       // 百分比位置跟随进度条
       var trackW = progressTrack.clientWidth;
@@ -985,7 +1029,6 @@
       setStaticDigit(card, initDigits[i]);
     }
 
-    remainingTimeEl.textContent = formatTime(totalSeconds);
     progressFill.style.transform = 'scaleX(1)';
     progressPercent.style.left = (progressTrack.clientWidth + 14) + 'px';
     progressPercent.textContent = '100.0%';
@@ -1022,7 +1065,6 @@
     progressFill.style.transform = 'scaleX(0)';
     progressPercent.style.left = '14px';
     progressPercent.textContent = '0.0%';
-    remainingTimeEl.textContent = '00:00';
     flipClock.classList.remove('running');
 
     setTimeout(function() {
