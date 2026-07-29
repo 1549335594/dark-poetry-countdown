@@ -1112,6 +1112,18 @@
     }
   }
 
+  // 移除某预设的所有倒计时（包括运行中的）—— 用于预设被更新时
+  function removeAllActiveByPresetId(presetId) {
+    for (var id in activeCountdowns) {
+      if (activeCountdowns[id].presetId === presetId) {
+        delete activeCountdowns[id];
+        if (id === currentCountdownId) {
+          currentCountdownId = null;
+        }
+      }
+    }
+  }
+
   function startBackgroundTicker() {
     if (bgTickerId) clearInterval(bgTickerId);
     bgTickerId = setInterval(function() {
@@ -1277,6 +1289,10 @@
           break;
         }
       }
+      // 预设被更新 → 清除该预设的所有运行中倒计时
+      // 这样下次点「开始倒计时」会以新设置重新开始
+      removeAllActiveByPresetId(selectedPresetId);
+      saveActiveCountdowns();
     } else {
       var newPreset = {
         id: 'p_' + Date.now(),
